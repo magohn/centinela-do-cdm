@@ -1,0 +1,19 @@
+# Base de datos local
+*.db
+*.db-journal
+
+# Logs
+*.log
+
+# Reportes locales
+reportes_cdm/
+
+# Variables de entorno
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/

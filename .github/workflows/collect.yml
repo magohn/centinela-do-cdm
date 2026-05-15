@@ -1,0 +1,61 @@
+name: CENTINELA DO-CDM — Recolección
+
+on:
+  schedule:
+    # Honduras = UTC-6 (sin horario de verano)
+    # Corre a las 4, 6, 8, 10, 12, 14, 16, 18, 20 HN → 10,12,14,16,18,20,22,0,2 UTC
+    - cron: '0 10 * * *'   # 04:00 HN
+    - cron: '0 12 * * *'   # 06:00 HN
+    - cron: '0 14 * * *'   # 08:00 HN
+    - cron: '0 16 * * *'   # 10:00 HN
+    - cron: '0 18 * * *'   # 12:00 HN
+    - cron: '0 20 * * *'   # 14:00 HN
+    - cron: '0 22 * * *'   # 16:00 HN
+    - cron: '0 0 * * *'    # 18:00 HN
+    - cron: '0 2 * * *'    # 20:00 HN
+  workflow_dispatch:        # Ejecución manual desde la web de GitHub
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      # ── Restaurar base de datos de ciclos anteriores ──────────────────────
+      - name: Restaurar base de datos
+        uses: actions/cache/restore@v4
+        with:
+          path: cdm.db
+          # restore-keys busca el cache más reciente con ese prefijo
+          key: cdm-db-never-matches
+          restore-keys: |
+            cdm-db-
+
+      # ── Recolección ───────────────────────────────────────────────────────
+      - name: Ejecutar collect.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GITHUB_ACTIONS: "true"
+        run: python collect.py
+
+      # ── Persistir base de datos para el próximo ciclo ─────────────────────
+      - name: Guardar base de datos
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: cdm.db
+          key: cdm-db-${{ github.run_id }}-${{ github.run_attempt }}

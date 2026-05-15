@@ -1,0 +1,61 @@
+name: CENTINELA DO-CDM — Entrega Informe
+
+on:
+  schedule:
+    # 5:00 AM Honduras (UTC-6) = 11:00 AM UTC
+    - cron: '0 11 * * *'
+  workflow_dispatch:        # Ejecución manual desde la web de GitHub
+
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      # ── Restaurar base de datos acumulada ────────────────────────────────
+      - name: Restaurar base de datos
+        uses: actions/cache/restore@v4
+        with:
+          path: cdm.db
+          key: cdm-db-never-matches
+          restore-keys: |
+            cdm-db-
+
+      # ── Generar y enviar informe ─────────────────────────────────────────
+      - name: Ejecutar deliver.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GITHUB_ACTIONS: "true"
+        run: python deliver.py
+
+      # ── Guardar informe HTML como artefacto (opcional, 7 días) ───────────
+      - name: Subir informe como artefacto
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: informe-cdm-${{ github.run_id }}
+          path: reportes_cdm/**/*.html
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # ── Persistir base de datos con snapshot de sentimiento ───────────────
+      - name: Guardar base de datos
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: cdm.db
+          key: cdm-db-${{ github.run_id }}-${{ github.run_attempt }}
