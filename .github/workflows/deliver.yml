@@ -1,10 +1,11 @@
-name: CENTINELA DO-CDM — Entrega Informe
+name: CENTINELA DO-CDM — Entrega Manual
+
+# Este workflow es SOLO para pruebas manuales.
+# La entrega automática de las 5 AM Honduras ya está
+# integrada dentro de collect.yml (cron 0 11 * * *).
 
 on:
-  schedule:
-    # 5:00 AM Honduras (UTC-6) = 11:00 AM UTC
-    - cron: '0 11 * * *'
-  workflow_dispatch:        # Ejecución manual desde la web de GitHub
+  workflow_dispatch:
 
 jobs:
   deliver:
@@ -24,7 +25,6 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
-      # ── Restaurar base de datos acumulada ────────────────────────────────
       - name: Restaurar base de datos
         uses: actions/cache/restore@v4
         with:
@@ -33,7 +33,6 @@ jobs:
           restore-keys: |
             cdm-db-
 
-      # ── Generar y enviar informe ─────────────────────────────────────────
       - name: Ejecutar deliver.py
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -42,7 +41,6 @@ jobs:
           GITHUB_ACTIONS: "true"
         run: python deliver.py
 
-      # ── Guardar informe HTML como artefacto (opcional, 7 días) ───────────
       - name: Subir informe como artefacto
         uses: actions/upload-artifact@v4
         if: always()
@@ -51,11 +49,3 @@ jobs:
           path: reportes_cdm/**/*.html
           retention-days: 7
           if-no-files-found: ignore
-
-      # ── Persistir base de datos con snapshot de sentimiento ───────────────
-      - name: Guardar base de datos
-        uses: actions/cache/save@v4
-        if: always()
-        with:
-          path: cdm.db
-          key: cdm-db-${{ github.run_id }}-${{ github.run_attempt }}
