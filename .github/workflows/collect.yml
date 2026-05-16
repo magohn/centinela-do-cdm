@@ -5,6 +5,7 @@ on:
     # Honduras = UTC-6 (sin horario de verano)
     # Corre a las 4, 6, 8, 10, 12, 14, 16, 18, 20 HN → 10,12,14,16,18,20,22,0,2 UTC
     - cron: '0 10 * * *'   # 04:00 HN
+    - cron: '0 11 * * *'   # 05:00 HN ← ENTREGA INFORME después de recolectar
     - cron: '0 12 * * *'   # 06:00 HN
     - cron: '0 14 * * *'   # 08:00 HN
     - cron: '0 16 * * *'   # 10:00 HN
@@ -18,7 +19,7 @@ on:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout código
@@ -38,7 +39,6 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: cdm.db
-          # restore-keys busca el cache más reciente con ese prefijo
           key: cdm-db-never-matches
           restore-keys: |
             cdm-db-
@@ -51,6 +51,18 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           GITHUB_ACTIONS: "true"
         run: python collect.py
+
+      # ── Entregar informe a las 5 AM Honduras (11 UTC) ─────────────────────
+      # Se ejecuta DENTRO del mismo job → DB ya está en memoria, sin depender
+      # de un segundo workflow que GitHub podría saltarse.
+      - name: Ejecutar deliver.py (5 AM Honduras)
+        if: github.event.schedule == '0 11 * * *' || github.event_name == 'workflow_dispatch'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GITHUB_ACTIONS: "true"
+        run: python deliver.py
 
       # ── Persistir base de datos para el próximo ciclo ─────────────────────
       - name: Guardar base de datos
