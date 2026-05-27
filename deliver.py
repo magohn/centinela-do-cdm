@@ -21,7 +21,7 @@ import anthropic
 import db
 from config import (
     MARATHON_ACCOUNT, MEDIOS_DEPORTIVOS, PERIODISTAS, RIVALES,
-    REPORT_RECIPIENTS, REPORTS_DIR,
+    REPORT_RECIPIENTS, REPORTS_DIR, LIGA_ACTIVA,
 )
 
 GMAIL_USER         = os.environ["GMAIL_USER"]
@@ -371,6 +371,52 @@ Exactamente 3 acciones. Priorizar las que afectan a Daniel Otero directamente.
 </ul>"""
 
 
+PAUSA_PROMPT = """Analiza los datos de redes sociales y medios deportivos hondureños
+del día {date} y genera el INFORME DE PAUSA DE LIGA de CENTINELA DO-CDM.
+
+PERÍODO: Últimas 24 horas ({period_start} → {period_end})
+
+CONTEXTO: La Liga Nacional está en receso. No hay partidos ni competencia activa.
+El foco es la reputación institucional, movimientos de mercado y presencia pública de Daniel Otero.
+
+DATOS:
+{data}
+
+Genera el informe en HTML limpio con EXACTAMENTE estas 3 secciones en este orden:
+
+<h2>👤 1. DANIEL OTERO — ACTIVIDAD Y PERCEPCIÓN</h2>
+Análisis completo de la presencia pública y reputación de Daniel Otero durante el receso.
+<ul>
+<li><strong>Sentimiento general:</strong> POSITIVO / NEUTRAL / NEGATIVO / MIXTO</li>
+<li><strong>Actividad en redes:</strong> [qué publicó o qué se publicó sobre él]</li>
+<li><strong>Narrativa dominante:</strong> [cómo lo están percibiendo medios y periodistas]</li>
+<li><strong>Publicación más relevante:</strong> [fuente y contenido]</li>
+<li><strong>Alertas o riesgos:</strong> [mencionar si hay algo que requiera atención] o <em>Sin alertas.</em></li>
+<li><strong>Oportunidades de posicionamiento:</strong> [acciones concretas sugeridas] o <em>Sin oportunidades destacadas.</em></li>
+</ul>
+
+<h2>🦖 2. QUÉ SE DICE DEL CLUB ESTA SEMANA</h2>
+Reputación general de CD Marathón durante el receso de liga.
+<ul>
+<li><strong>Sentimiento general:</strong> POSITIVO / NEUTRAL / NEGATIVO / MIXTO</li>
+<li><strong>Temas más mencionados:</strong> [lista de temas en conversación]</li>
+<li><strong>Cobertura de medios deportivos:</strong> [qué están diciendo Diario Diez, TVC, HRN, etc.]</li>
+<li><strong>Voz de la afición:</strong> [sentimiento y temas de fans en X y Facebook]</li>
+<li><strong>Nota más destacada:</strong> [medio, titular y ángulo — Favorable / Neutral / Crítico]</li>
+<li><strong>Comparación con rivales:</strong> [presencia digital de Marathón vs Olimpia, Motagua, Real España]</li>
+</ul>
+
+<h2>🔄 3. MOVIMIENTOS DE MERCADO</h2>
+Fichajes, bajas, rumores de transferencias, renovaciones y noticias institucionales.
+<ul>
+<li><strong>Movimientos confirmados:</strong> [altas o bajas oficiales] o <em>Sin movimientos confirmados.</em></li>
+<li><strong>Rumores activos:</strong> [jugadores vinculados o desvinculados] o <em>Sin rumores relevantes.</em></li>
+<li><strong>Actividad de rivales en mercado:</strong> [movimientos de Olimpia, Motagua o Real España relevantes]</li>
+<li><strong>Noticias institucionales:</strong> [patrocinadores, infraestructura, directiva] o <em>Sin noticias institucionales.</em></li>
+<li><strong>Acción recomendada:</strong> [qué debería comunicar o monitorear el club esta semana]</li>
+</ul>"""
+
+
 # ── Análisis con Claude ──────────────────────────────────────────────────────
 
 def analyze_daily(data_summary: str) -> str:
@@ -378,13 +424,15 @@ def analyze_daily(data_summary: str) -> str:
     now   = datetime.now()
     since = (now - timedelta(hours=24)).strftime("%d/%m %H:%M")
 
+    prompt = DAILY_PROMPT if LIGA_ACTIVA else PAUSA_PROMPT
+
     msg = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=10000,
         system=SYSTEM_PROMPT,
         messages=[{
             "role": "user",
-            "content": DAILY_PROMPT.format(
+            "content": prompt.format(
                 date=now.strftime("%d de %B, %Y"),
                 period_start=since,
                 period_end=now.strftime("%d/%m %H:%M"),
@@ -603,7 +651,8 @@ def main():
         email_html = build_email_html(analysis_html)
         save_local_report(email_html)
 
-        subject = f"🦖 CENTINELA DO-CDM — {now.strftime('%A %d/%m/%Y')} · Informe Diario"
+        modo    = "Informe Diario" if LIGA_ACTIVA else "Receso de Liga"
+        subject = f"🦖 CENTINELA DO-CDM — {now.strftime('%A %d/%m/%Y')} · {modo}"
         log("→ Enviando informe…")
         send_email(email_html, subject)
     else:
