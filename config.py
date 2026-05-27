@@ -176,6 +176,11 @@ REPORT_RECIPIENTS = [
 ]
 SENDER_NAME = "🦖 CENTINELA DO-CDM"
 
+# ── Modo de temporada ────────────────────────────────────────────────────────
+# True  → Liga Activa   (informe completo con partidos, resultados, rivales)
+# False → Liga en Pausa (informe ligero sin datos de competencia)
+LIGA_ACTIVA = True
+
 # Horario de recolección (mismas horas que CENTINELA político)
 COLLECT_HOURS = [4, 6, 8, 10, 12, 14, 16, 18, 20]
 
