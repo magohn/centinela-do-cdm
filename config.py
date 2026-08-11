@@ -170,7 +170,7 @@ else:
     LOG_PATH    = os.path.join(BASE_DIR, "cdm.log")
 
 REPORT_RECIPIENTS = [
-    "max.gonzaleshn@gmail.com",
+    "maxgonzales1981@gmail.com",
     "cristian.cousin@gmail.com",
     "correootero@yahoo.com",
 ]
