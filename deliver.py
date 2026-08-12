@@ -606,7 +606,9 @@ def send_email(html: str, subject: str):
     msg["To"]      = ", ".join(REPORT_RECIPIENTS)
     msg.attach(MIMEText(html, "html"))
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+    with smtplib.SMTP("smtp.office365.com", 587) as s:
+        s.ehlo()
+        s.starttls()
         s.login(GMAIL_USER, GMAIL_APP_PASSWORD)
         s.sendmail(GMAIL_USER, REPORT_RECIPIENTS, msg.as_string())
     log(f"  ✓ Email enviado a: {', '.join(REPORT_RECIPIENTS)}")
