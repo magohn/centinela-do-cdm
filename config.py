@@ -171,8 +171,6 @@ else:
 
 REPORT_RECIPIENTS = [
     "maxgonzales1981@gmail.com",
-    "cristian.cousin@gmail.com",
-    "correootero@yahoo.com",
 ]
 SENDER_NAME = "🦖 CENTINELA DO-CDM"
 
