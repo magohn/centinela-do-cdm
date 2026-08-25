@@ -4,7 +4,7 @@ on:
   schedule:
     # Honduras = UTC-6. Recolección cada 2h.
     # La ENTREGA la dispara cron-job.org vía workflow_dispatch a las 11:00 UTC (5 AM HN)
-    - cron: '0 */2 * * *'  # Cada 2 horas (0,2,4,6,8,10,12,14,16,18,20,22 UTC)
+    - cron: '0 */6 * * *'  # Cada 2 horas (0,2,4,6,8,10,12,14,16,18,20,22 UTC)
   workflow_dispatch:        # Ejecución manual desde la web de GitHub
 
 jobs:
