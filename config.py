@@ -169,11 +169,7 @@ else:
     ENV_PATH    = os.path.expanduser("~/social_monitor/.env")
     LOG_PATH    = os.path.join(BASE_DIR, "cdm.log")
 
-REPORT_RECIPIENTS = [
-    "maxgonzales1981@gmail.com",
-    "cristian.cousin@gmail.com",
-    "correootero@yahoo.com",
-]
+REPORT_RECIPIENTS = ["maxgonzales1981@gmail.com"]
 SENDER_NAME = "🦖 CENTINELA DO-CDM"
 
 # ── Modo de temporada ────────────────────────────────────────────────────────
